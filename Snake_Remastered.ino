@@ -55,7 +55,7 @@ const byte difficultyMenuSize = 4;
 const byte resetScoreMenuSize = 2;
 
 // delay for welcome
-const long delayWelcomeVariable = 1000;
+const long delayWelcomeVariable = 5000;
 
 // menu auxiliary variables
 byte currentMenu = 0;
@@ -522,7 +522,6 @@ void setup() {
   dataFromEEPROM();
   
   analogWrite(lcdBrightnessPin, settings.lcdBrightness);
-  updateHighscores(0);
 
   lcd.begin(lcdWidth, lcdHeight);
   lc.shutdown(0, false);
