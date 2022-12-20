@@ -54,13 +54,17 @@ const byte soundMenuSize = 3;
 const byte difficultyMenuSize = 4;
 const byte resetScoreMenuSize = 2;
 
+// delay for welcome
 const long delayWelcomeVariable = 1000;
 
+// menu auxiliary variables
 byte currentMenu = 0;
 byte lastCursorState;
 byte currentCursorState = 0;
+
 bool playingGame = false;
 
+// custom lcdCharacter
 byte rightArrow[] = {
   B00000,
   B00100,
@@ -149,6 +153,7 @@ byte matrix[matrixSize][matrixSize] = {
   {0,0,0,0,0,0,0,0}
 };
 
+// custom matrixes
 const int matrixOn[matrixSize] = {
   B00000000,
   B00000000,
@@ -295,13 +300,13 @@ const int lcdBrightnessMatrix6[matrixSize] = {
 
 const int soundOnMatrix[matrixSize] = {
   B00000000,
-  B00000100,
-  B00001100,
+  B00010010,
   B00110100,
-  B00100100,
+  B11010000,
+  B10010111,
+  B11010000,
   B00110100,
-  B00001100,
-  B00000100
+  B00010010
 };
 
 const int soundOffMatrix[matrixSize] = {
@@ -469,10 +474,18 @@ const int medalMatrix[matrixSize] = {
   B00011000
 };
 
-const int buzzerPin = A2;
+// buzzer variables
+const int buzzerPin = 13;
+const int buzzerWrongMove = 370;
+const int buzzerRightMove = 600;
+const int buzzerButtonPressed = 105;
+const int buzzerEatFood = 500;
 
+// player variables
 char defaultPlayer[7] = "Player";
+char defeatedPlayer[7];
 
+// settings variables
 struct {
   char playerName[7];
   byte difficulty;
@@ -481,13 +494,15 @@ struct {
   byte sound;
 } settings;
 
+// variable for scrollText
 long lastChanged;
+
+// index variable for enterName
 byte indexName;
 
+// highscore variables
 int highscores[5] = {0, 0, 0, 0, 0};
 char highscoreNames[5][7];
-
-char defeatedPlayer[7];
 int defeatedPosition;
 bool highscoreDefeated = false;
 
@@ -524,10 +539,10 @@ void loop() {
     handleMenu();
   }
   else {
-    generateFood();    // if there is no food, generate one
-    scanJoystick();    // watches joystick movements & blinks with food
-    calculateSnake();  // calculates snake parameters
-    handleGameStates();
+    generateFood();    
+    scanJoystick();  
+    calculateSnake();  
+    handleGameOver();
     menuInGame();
   }
 }
@@ -578,6 +593,7 @@ void handleMenu() {
   }
 }
 
+// function to print different drawings on matrix 
 void showCustomMatrix(int customMatrix[matrixSize]) {
   for (int row = 0; row < matrixSize; row++) {
     lc.setRow(0, row, customMatrix[row]);
@@ -937,7 +953,7 @@ void displayEnterName() {
   if (indexName < 6) {
     moveNameLetter();
   }
-  delay(50);
+  delay(50); // delay for lcd.cursor()
   lcd.noCursor();
 }
 
@@ -1148,7 +1164,7 @@ void displayLCDBrightness() {
           case 0:
             break;
           case 1:
-            tone(buzzerPin, 370, 30);
+            tone(buzzerPin, buzzerWrongMove, 30);
             break;
         }
 
@@ -1160,7 +1176,7 @@ void displayLCDBrightness() {
           case 0:
             break;
           case 1:
-            tone(buzzerPin, 600, 30);
+            tone(buzzerPin, buzzerRightMove, 30);
             break;
         }
 
@@ -1177,7 +1193,7 @@ void displayLCDBrightness() {
           case 0:
             break;
           case 1:
-            tone(buzzerPin, 370, 30);
+            tone(buzzerPin, buzzerWrongMove, 30);
             break;
         }
         
@@ -1189,7 +1205,7 @@ void displayLCDBrightness() {
           case 0:
             break;
           case 1:
-            tone(buzzerPin, 600, 30);
+            tone(buzzerPin, buzzerRightMove, 30);
             break;
         }
 
@@ -1226,7 +1242,7 @@ void displayMatBrightness() {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 370, 30);
+          tone(buzzerPin, buzzerWrongMove, 30);
           break;
       }
     }
@@ -1236,7 +1252,7 @@ void displayMatBrightness() {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 600, 30);
+          tone(buzzerPin, buzzerRightMove, 30);
           break;
       }
 
@@ -1252,7 +1268,7 @@ void displayMatBrightness() {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 370, 30);
+          tone(buzzerPin, buzzerWrongMove, 30);
           break;
       }
     }
@@ -1262,7 +1278,7 @@ void displayMatBrightness() {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 600, 30);
+          tone(buzzerPin, buzzerRightMove, 30);
           break;
       }
 
@@ -1404,114 +1420,114 @@ void displayHowToPlay(){
       case 0:
         lcd.setCursor(3, 0);
         lcd.print("This is a");
-        lcd.setCursor(1, 1);
-        lcd.print("classic snake");
+        lcd.setCursor(2, 1);
+        lcd.print("snake game");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 1:
-        lcd.setCursor(1, 0);
-        lcd.print("game. Just");
+        lcd.setCursor(2, 0);
+        lcd.print("remastered.");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(0, 1);
-        lcd.print("move the snake");
+        lcd.setCursor(1, 1);
+        lcd.print("Just move the");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 2:
         lcd.setCursor(1, 0);
-        lcd.print("using given");
+        lcd.print("snake using");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(1, 1);
-        lcd.print("joystick and");
+        lcd.setCursor(0, 1);
+        lcd.print("given joystick");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 3:
         lcd.setCursor(1, 0);
-        lcd.print("eat the food.");
+        lcd.print("and eat the");
         lcd.setCursor(15, 0);
         lcd.write(3);
         lcd.setCursor(1, 1);
-        lcd.print("On easy and");
+        lcd.print("food. On easy");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 4:
-        lcd.setCursor(1, 0);
-        lcd.print("medium just");
+        lcd.setCursor(2, 0);
+        lcd.print("it is just");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(1, 1);
-        lcd.print("the speed of");
+        lcd.setCursor(2, 1);
+        lcd.print("a simple");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 5:
         lcd.setCursor(1, 0);
-        lcd.print("the snake is");
+        lcd.print("snake game.");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(0, 1);
-        lcd.print("different, but");
+        lcd.setCursor(1, 1);
+        lcd.print("On medium the");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 6:
-        lcd.setCursor(1, 0);
-        lcd.print("when the");
+        lcd.setCursor(0, 0);
+        lcd.print("speed increases");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(1, 1);
-        lcd.print("difficulty is");
+        lcd.setCursor(0, 1);
+        lcd.print("and walls will");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 7:
-        lcd.setCursor(1, 0);
-        lcd.print("set on hard,");
+        lcd.setCursor(2, 0);
+        lcd.print("appear at");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(1, 1);
-        lcd.print("the snake is");
+        lcd.setCursor(2, 1);
+        lcd.print("score = 5.");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 8:
         lcd.setCursor(1, 0);
-        lcd.print("faster and if");
+        lcd.print("On hard the");
         lcd.setCursor(15, 0);
         lcd.write(3);
-        lcd.setCursor(1, 1);
-        lcd.print("you hit the");
+        lcd.setCursor(0, 1);
+        lcd.print("speed increases");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 9:
         lcd.setCursor(1, 0);
-        lcd.print("edge of the");
+        lcd.print("everytime you");
         lcd.setCursor(15, 0);
         lcd.write(3);
         lcd.setCursor(1, 1);
-        lcd.print("matrix you");
+        lcd.print("eat the food");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 10:
-        lcd.setCursor(1, 0);
-        lcd.print("matrix you");
+        lcd.setCursor(0, 0);
+        lcd.print("and walls will");
         lcd.setCursor(15, 0);
         lcd.write(3);
         lcd.setCursor(2, 1);
-        lcd.print("lose.");
+        lcd.print("appear at");
         lcd.setCursor(15, 1);
         lcd.write(2);
         break;
       case 11:
         lcd.setCursor(2, 0);
-        lcd.print("lose.");
+        lcd.print("score = 3.");
         lcd.setCursor(0, 1);
         lcd.print("Press to go back");
         lcd.setCursor(15, 0);
@@ -1531,7 +1547,7 @@ void menuUpDownMoves(byte menuSize) {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 370, 30);
+          tone(buzzerPin, buzzerWrongMove, 30);
           break;
       }
     }
@@ -1541,7 +1557,7 @@ void menuUpDownMoves(byte menuSize) {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 600, 30);
+          tone(buzzerPin, buzzerRightMove, 30);
           break;
       }
 
@@ -1563,7 +1579,7 @@ void menuUpDownMoves(byte menuSize) {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 370, 30);
+          tone(buzzerPin, buzzerWrongMove, 30);
           break;
       }
     }
@@ -1573,7 +1589,7 @@ void menuUpDownMoves(byte menuSize) {
         case 0:
           break;
         case 1:
-          tone(buzzerPin, 600, 30);
+          tone(buzzerPin, buzzerRightMove, 30);
           break;
       }
 
@@ -1618,12 +1634,9 @@ void buttonPressed() {
                     case 0:
                       break;
                     case 1:
-                      tone(buzzerPin, 105, 30);
+                      tone(buzzerPin, buzzerButtonPressed, 30);
                       break;
                   }
-                }
-                else {
-                  playingGame = false;
                 }
                 break;
               case 1: case 2: case 3: case 4:
@@ -1634,7 +1647,7 @@ void buttonPressed() {
                   case 0:
                     break;
                   case 1:
-                    tone(buzzerPin, 105, 30);
+                    tone(buzzerPin, buzzerButtonPressed, 30);
                     break;
                 }
                 break;
@@ -1652,7 +1665,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             if (currentCursorState == 0) { // enterName
@@ -1705,7 +1718,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             currentMenu = 2;
@@ -1715,7 +1728,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             if (currentCursorState == 0) {
@@ -1744,7 +1757,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             currentMenu = 2;
@@ -1755,7 +1768,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             currentMenu = 2;
@@ -1766,7 +1779,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
             if (currentCursorState == 0) {
@@ -1790,7 +1803,7 @@ void buttonPressed() {
               case 0:
                 break;
               case 1:
-                tone(buzzerPin, 105, 30);
+                tone(buzzerPin, buzzerButtonPressed, 30);
                 break;
             }
 
@@ -1897,6 +1910,7 @@ int currentScore = 0;
 
 Point snake;
 Point food(-1, -1);
+Point wall(-1, -1);
 
 int snakeLength = initialSnakeLength;
 int snakeSpeed = 1;
@@ -1925,6 +1939,20 @@ void generateFood() {
   }
 }
 
+void generateWall() {
+  if (wall.row == -1 || wall.col == -1) {
+    if (snakeLength >= 64) {
+      gameOver = true;
+      return;
+    }
+
+    do {
+      wall.col = random(8);
+      wall.row = random(8);
+    } while (gameboard[wall.row][wall.col] > 0 && gameboard[wall.row + 1][wall.col + 1] > 0 && wall.col != food.col && wall.row != food.row);
+  }
+}
+
 void scanJoystick() {
   int previousDirection = snakeDirection; // save the last direction
   long timestamp = millis();
@@ -1934,10 +1962,16 @@ void scanJoystick() {
       snakeSpeed = 400;
     }
     else if (settings.difficulty == 1) {
-      snakeSpeed = 200;
+      snakeSpeed = 290;
+      if (snakeLength >= initialSnakeLength + 5) {
+        generateWall();
+      }
     }
     else if (settings.difficulty == 2) {
-      snakeSpeed = 100;
+      snakeSpeed = 270;
+      if (snakeLength >= initialSnakeLength + 3) {
+        generateWall();
+      }
     }
     
 
@@ -1951,62 +1985,77 @@ void scanJoystick() {
     snakeDirection + 2 == previousDirection && previousDirection != 0 ? snakeDirection = previousDirection : 0;
     snakeDirection - 2 == previousDirection && previousDirection != 0 ? snakeDirection = previousDirection : 0;
 
-    // blink the food
+    // create blinking food
     lc.setLed(0, food.row, food.col, millis() % 100 < 50 ? 1 : 0);
+    
+    // create wall
+    lc.setLed(0, wall.row, wall.col, 1);
+
+    if (wall.row == 7) {
+      lc.setLed(0, wall.row - 1, wall.col, 1);
+    }
+    else {
+      lc.setLed(0, wall.row + 1, wall.col, 1);
+    }
   }
 }
 
-// calculate snake movement data
+// calculate snake movement
 void calculateSnake() {
   switch (snakeDirection) {
     case up:
       snake.row--;
-      fixEdge();
+      wrapEdges();
       lc.setLed(0, snake.row, snake.col, 1);
       break;
 
     case right:
       snake.col++;
-      fixEdge();
+      wrapEdges();
       lc.setLed(0, snake.row, snake.col, 1);
       break;
 
     case down:
       snake.row++;
-      fixEdge();
+      wrapEdges();
       lc.setLed(0, snake.row, snake.col, 1);
       break;
 
     case left:
       snake.col--;
-      fixEdge();
+      wrapEdges();
       lc.setLed(0, snake.row, snake.col, 1);
       break;
 
-    default: // if the snake is not moving, exit
+    default: // if snake not moving => exit
       return;
   }
 
-  // if there is a snake body segment, this will cause the end of the game (snake must be moving)
+  // if snake hits his body then end of game
   if (gameboard[snake.row][snake.col] > 1 && snakeDirection != 0) {
     gameOver = true;
     return;
   }
 
-  // check if the food was eaten
+  // check if the food was eaten; if yes food and wall reset
   if (snake.row == food.row && snake.col == food.col) {
-    food.row = -1; // reset food
+    food.row = -1;
     food.col = -1;
+    wall.row = -1;
+    wall.col = -1;
 
     // increment snake length and change currentScore
     snakeLength++;
     currentScore = snakeLength - initialSnakeLength;
+    if (settings.difficulty == 2) {
+      snakeSpeed -= 15;
+    }
     
     switch (settings.sound) {
       case 0:
         break;
       case 1:
-        tone(buzzerPin, 500, 50);
+        tone(buzzerPin, buzzerEatFood, 50);
         break;
     }
 
@@ -2020,13 +2069,18 @@ void calculateSnake() {
     }
   }
 
+  else if (snake.row == wall.row && snake.col == wall.col) {
+    gameOver = true;
+    return;
+  }
+
   // add new segment at the snake head location
-  gameboard[snake.row][snake.col] = snakeLength + 1; // will be decremented in a moment
+  gameboard[snake.row][snake.col] = snakeLength + 1;
 
   // decrement all the snake body segments, if segment is 0, turn the corresponding led off
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
-      // if there is a body segment, decrement it's value
+      // if body segment => decrement it's value
       if (gameboard[row][col] > 0 ) {
         gameboard[row][col]--;
       }
@@ -2038,32 +2092,16 @@ void calculateSnake() {
 }
 
 
-// causes the snake to appear on the other side of the screen if it gets out of the edge
-void fixEdge() {
-  if (settings.difficulty == 2) {
-    if (snake.col < 0) {
-      gameOver = true;
-    }
-    if (snake.col > 7) {
-      gameOver = true;
-    }
-    if (snake.row < 0) {
-      gameOver = true;
-    }
-    if (snake.row > 7) {
-      gameOver = true;
-    }
-  }
-  else {
-    snake.col < 0 ? snake.col += 8 : 0;
-    snake.col > 7 ? snake.col -= 8 : 0;
-    snake.row < 0 ? snake.row += 8 : 0;
-    snake.row > 7 ? snake.row -= 8 : 0;
-  }
+// make the snake appear on the other side of the matrix if it gets out of the edge
+void wrapEdges() {
+  snake.col < 0 ? snake.col += 8 : 0;
+  snake.col > 7 ? snake.col -= 8 : 0;
+  snake.row < 0 ? snake.row += 8 : 0;
+  snake.row > 7 ? snake.row -= 8 : 0;
 }
 
 
-void handleGameStates() {
+void handleGameOver() {
   if (gameOver) {
     currentMenu = 0;
     currentCursorState = 0;
@@ -2080,6 +2118,8 @@ void handleGameStates() {
     snake.col = random(8);
     food.row = -1;
     food.col = -1;
+    wall.row = -1;
+    wall.col = -1;
     snakeLength = initialSnakeLength;
     snakeDirection = 1;
     currentScore = 0;
@@ -2105,6 +2145,7 @@ void menuInGame(){
 void showGameOver() {
   if (highscoreDefeated) {
     showCustomMatrix(happyFaceMatrix);
+    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Congratulations!");
     for (int i = 0; i < 16; i++) {
@@ -2136,6 +2177,7 @@ void showGameOver() {
   }
   else {
     showCustomMatrix(sadFaceMatrix);
+    lcd.clear();
     lcd.setCursor(1, 0);
     lcd.print("Unfortunately");
     for (int i = 0; i < 16; i++) {
@@ -2145,16 +2187,16 @@ void showGameOver() {
     delay(5000);
     lcd.clear();
 
-    lcd.setCursor(0, 0);
+    lcd.setCursor(1, 0);
     lcd.print("You didn't pass");
     lcd.setCursor(5, 1);
     lcd.print("anyone");
-    delay(5000);
+    delay(3000);
     lcd.clear();
 
     lcd.setCursor(3, 0);
     lcd.print("Try again!");
-    delay(5000);
+    delay(3000);
     lcd.clear();
   }
   playingGame = false;
