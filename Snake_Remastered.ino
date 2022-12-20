@@ -437,25 +437,36 @@ const int fifthMatrix[matrixSize] = {
 };
 
 const int happyFaceMatrix[matrixSize] = {
-  B00000000,
-  B01100110,
-  B01100110,
-  B00000000,
+  B11000011,
   B10000001,
+  B01100110,
+  B01100110,
+  B00000000,
   B01000010,
   B00111100,
   B00000000
 };
 
 const int sadFaceMatrix[matrixSize] = {
+  B11000011,
+  B10000001,
+  B01100110,
+  B01100110,
   B00000000,
-  B01100110,
-  B01100110,
   B00000000,
   B00111100,
-  B01000010,
+  B01000010
+};
+
+const int medalMatrix[matrixSize] = {
   B10000001,
-  B00000000
+  B10000001,
+  B01000010,
+  B00100100,
+  B00011000,
+  B00111100,
+  B00111100,
+  B00011000
 };
 
 const int buzzerPin = A2;
@@ -2102,7 +2113,9 @@ void showGameOver() {
     }
     delay(5000);
     lcd.clear();
+    lc.clearDisplay(0);
 
+    showCustomMatrix(medalMatrix);
     lcd.setCursor(1, 0);
     lcd.print("You crushed");
     lcd.setCursor(1, 1);
